@@ -16,22 +16,25 @@ fn play_sound(file: &std::fs::File) -> Result<(), ProcessError>{
     Ok(())
 }
 
-#[tokio::main]
-async fn main() {
-    let expression = "0 1/1 * * * * *";
-    let mut sched = JobScheduler::new().await.unwrap();
-
-    let job = Job::new(expression, |_uuid, _l| {
+fn create_sound_job(expression: &str, filename: String) -> Job {
+    Job::new(expression, move |_uuid, _l| {
         println!("{:?}", Utc::now());
-        let filename = env::args().nth(1).unwrap();
-        let file = std::fs::File::open(filename).unwrap();
+        let file = std::fs::File::open(filename.clone()).unwrap();
         match play_sound(&file) {
             Err(err) => println!("{}", err),
             _ => {},
         }
         println!("{:?}", Utc::now());
-    }).unwrap();
+    }).unwrap()
+}
 
+#[tokio::main]
+async fn main() {
+    let expression = "0 1/1 * * * * *";
+    let mut sched = JobScheduler::new().await.unwrap();
+
+    let filename = env::args().nth(1).unwrap();
+    let job = create_sound_job(expression, filename.clone());
     sched.add(job).await.unwrap();
 
     #[cfg(feature = "signal")]
