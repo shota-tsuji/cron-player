@@ -2,7 +2,7 @@ use chrono::Utc;
 use std::fmt;
 use std::fmt::Formatter;
 use std::io::BufReader;
-use tokio_cron_scheduler::{Job, JobScheduler};
+use tokio_cron_scheduler::{Job};
 
 pub struct JobCreateService {}
 
@@ -33,9 +33,8 @@ impl JobCreateService {
         Job::new(expression, move |_uuid, _l| {
             println!("{:?}", Utc::now());
             let file = std::fs::File::open(file_path.clone()).unwrap();
-            match play_sound(&file) {
-                Err(err) => println!("{}", err),
-                _ => {}
+            if let Err(err) = play_sound(&file) {
+                println!("{}", err)
             }
             println!("{:?}", Utc::now());
         })
