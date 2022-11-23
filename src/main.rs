@@ -16,10 +16,14 @@ fn play_sound(file: &std::fs::File) -> Result<(), ProcessError>{
     Ok(())
 }
 
-fn create_sound_job(expression: &str, filename: String) -> Job {
+/// Create a job to add scheduler
+///
+/// * `expression` - Text to represent the schedule.
+/// * `filename` - Sound file path. (String is used to move the ownership to closure and save file path within job to return)
+fn create_sound_job(expression: &str, file_path: String) -> Job {
     Job::new(expression, move |_uuid, _l| {
         println!("{:?}", Utc::now());
-        let file = std::fs::File::open(filename.clone()).unwrap();
+        let file = std::fs::File::open(file_path.clone()).unwrap();
         match play_sound(&file) {
             Err(err) => println!("{}", err),
             _ => {},
@@ -33,8 +37,8 @@ async fn main() {
     let expression = "0 1/1 * * * * *";
     let mut sched = JobScheduler::new().await.unwrap();
 
-    let filename = env::args().nth(1).unwrap();
-    let job = create_sound_job(expression, filename.clone());
+    let file_path = env::args().nth(1).unwrap();
+    let job = create_sound_job(expression, file_path.clone());
     sched.add(job).await.unwrap();
 
     #[cfg(feature = "signal")]
