@@ -1,8 +1,8 @@
 use chrono::Utc;
-use std::fmt;
-use std::fmt::Formatter;
+
+use crate::domain::error::kind::ProcessError;
 use std::io::BufReader;
-use tokio_cron_scheduler::{Job};
+use tokio_cron_scheduler::Job;
 
 pub struct JobCreateService {}
 
@@ -39,19 +39,5 @@ impl JobCreateService {
             println!("{:?}", Utc::now());
         })
         .unwrap()
-    }
-}
-
-enum ProcessError {
-    FileReadError,
-    OutputStreamError,
-}
-
-impl fmt::Display for ProcessError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match *self {
-            ProcessError::FileReadError => write!(f, "file state is invalid"),
-            ProcessError::OutputStreamError => write!(f, "output stream setting is failed"),
-        }
     }
 }

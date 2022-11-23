@@ -25,4 +25,3 @@ impl JobExecuteService {
         self.scheduler.add(job).await.unwrap();
     }
 }
-

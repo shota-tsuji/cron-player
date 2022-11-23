@@ -1,5 +1,5 @@
-use std::{env};
-use tokio_cron_scheduler::{JobScheduler};
+use std::env;
+use tokio_cron_scheduler::JobScheduler;
 
 mod domain;
 
