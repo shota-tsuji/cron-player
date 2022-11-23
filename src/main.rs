@@ -32,6 +32,32 @@ fn create_sound_job(expression: &str, file_path: String) -> Job {
     }).unwrap()
 }
 
+struct JobService {
+    scheduler: JobScheduler,
+}
+
+impl JobService {
+    fn new(scheduler: JobScheduler) -> Self {
+        Self { scheduler }
+    }
+
+    async fn start(&mut self) {
+        #[cfg(feature = "signal")]
+        self.scheduler.s.shutdown_on_ctrl_c();
+
+        self.scheduler.set_shutdown_handler(Box::new(|| {
+            Box::pin(async move {
+                println!("Shut down done");
+            })
+        }));
+        let _ = self.scheduler.start().await.unwrap();
+    }
+
+    async fn add(&self, job: Job) {
+        self.scheduler.add(job).await.unwrap();
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let expression = "0 1/1 * * * * *";
@@ -39,22 +65,14 @@ async fn main() {
 
     let file_path = env::args().nth(1).unwrap();
     let job = create_sound_job(expression, file_path.clone());
-    sched.add(job).await.unwrap();
 
-    #[cfg(feature = "signal")]
-    sched.shutdown_on_ctrl_c();
+    let mut scheduler = JobService::new(sched);
+    scheduler.add(job).await;
+    scheduler.start().await;
 
-    sched.set_shutdown_handler(Box::new(|| {
-        Box::pin(async move {
-            println!("Shut down done");
-        })
-    }));
-
-    let _ = sched.start().await.unwrap();
     loop {
         tokio::time::sleep(core::time::Duration::from_millis(500)).await;
     }
-
 }
 
 enum ProcessError {
