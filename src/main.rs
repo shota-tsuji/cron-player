@@ -5,6 +5,7 @@ mod domain;
 
 use crate::domain::service::job_creation_service::JobCreateService;
 use crate::domain::service::job_execution_service::JobExecuteService;
+use crate::domain::entity::job::PlaySound;
 
 #[tokio::main]
 async fn main() {
@@ -12,7 +13,8 @@ async fn main() {
     let sched = JobScheduler::new().await.unwrap();
 
     let file_path = env::args().nth(1).unwrap();
-    let job = JobCreateService::create_sound_job(expression, file_path.clone());
+    let cmd = PlaySound::new(expression.to_string(), file_path.clone());
+    let job = JobCreateService::create_sound_job(cmd);
 
     let mut job_execute_service = JobExecuteService::new(sched);
     job_execute_service.add(job).await;
