@@ -3,28 +3,26 @@ use std::io::BufReader;
 use chrono::Utc;
 use tokio_cron_scheduler::{Job, JobScheduler};
 
-fn play_sound(file: &String) {
+fn play_sound(file: &std::fs::File) {
+    let file = file.try_clone().unwrap();
+
+    let decoder = rodio::Decoder::new(BufReader::new(file)).unwrap();
     let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&handle).unwrap();
-
-    let file = std::fs::File::open(file).unwrap();
-    sink.append(rodio::Decoder::new(BufReader::new(file)).unwrap());
-
+    sink.append(decoder);
     sink.sleep_until_end();
 }
 
 #[tokio::main]
 async fn main() {
-    let args: Vec<String> = env::args().collect();
-    println!("{:?}", args);
-
-
     let expression = "0 1/1 * * * * *";
     let mut sched = JobScheduler::new().await.unwrap();
 
-    let job = Job::new(expression, move |_uuid, _l| {
+    let job = Job::new(expression, |_uuid, _l| {
         println!("{:?}", Utc::now());
-        play_sound(&args[1]);
+        let filename = env::args().nth(1).unwrap();
+        let file = std::fs::File::open(filename).unwrap();
+        play_sound(&file);
         println!("{:?}", Utc::now());
     }).unwrap();
 
