@@ -16,27 +16,36 @@ fn play_sound(file: &std::fs::File) -> Result<(), ProcessError>{
     Ok(())
 }
 
-/// Create a job to add scheduler
-///
-/// * `expression` - Text to represent the schedule.
-/// * `filename` - Sound file path. (String is used to move the ownership to closure and save file path within job to return)
-fn create_sound_job(expression: &str, file_path: String) -> Job {
-    Job::new(expression, move |_uuid, _l| {
-        println!("{:?}", Utc::now());
-        let file = std::fs::File::open(file_path.clone()).unwrap();
-        match play_sound(&file) {
-            Err(err) => println!("{}", err),
-            _ => {},
-        }
-        println!("{:?}", Utc::now());
-    }).unwrap()
+struct JobCreateService {
 }
 
-struct JobService {
+impl JobCreateService {
+    fn new() -> Self {
+        Self {}
+    }
+
+    /// Create a job to add scheduler
+    ///
+    /// * `expression` - Text to represent the schedule.
+    /// * `filename` - Sound file path. (String is used to move the ownership to closure and save file path within job to return)
+    fn create_sound_job(expression: &str, file_path: String) -> Job {
+        Job::new(expression, move |_uuid, _l| {
+            println!("{:?}", Utc::now());
+            let file = std::fs::File::open(file_path.clone()).unwrap();
+            match play_sound(&file) {
+                Err(err) => println!("{}", err),
+                _ => {},
+            }
+            println!("{:?}", Utc::now());
+        }).unwrap()
+    }
+}
+
+struct JobExecuteService {
     scheduler: JobScheduler,
 }
 
-impl JobService {
+impl JobExecuteService {
     fn new(scheduler: JobScheduler) -> Self {
         Self { scheduler }
     }
@@ -64,11 +73,11 @@ async fn main() {
     let mut sched = JobScheduler::new().await.unwrap();
 
     let file_path = env::args().nth(1).unwrap();
-    let job = create_sound_job(expression, file_path.clone());
+    let job = JobCreateService::create_sound_job(expression, file_path.clone());
 
-    let mut scheduler = JobService::new(sched);
-    scheduler.add(job).await;
-    scheduler.start().await;
+    let mut job_execute_service = JobExecuteService::new(sched);
+    job_execute_service.add(job).await;
+    job_execute_service.start().await;
 
     loop {
         tokio::time::sleep(core::time::Duration::from_millis(500)).await;
