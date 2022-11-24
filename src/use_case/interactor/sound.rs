@@ -1,6 +1,6 @@
 
 use crate::domain::entity::sound::Sound;
-use crate::domain::error::kind::ProcessError;
+use crate::domain::error::ProcessError;
 use crate::domain::repository::sound_repository::SoundRepository;
 use crate::use_case::sound::SoundUseCase;
 

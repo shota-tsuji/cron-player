@@ -1,7 +1,7 @@
-
 use uuid::Uuid;
+
 use crate::domain::entity::sound::Sound;
-use crate::domain::error::kind::ProcessError;
+use crate::domain::error::ProcessError;
 use crate::domain::repository::sound_repository::SoundRepository;
 
 pub struct LocalSoundRepository {
@@ -20,7 +20,7 @@ impl SoundRepository for LocalSoundRepository {
             id: Uuid::new_v4(),
             title: "title0".to_string(),
             format: "flac".to_string(),
-            storage_path: "/media/sound.flac".to_string()
+            storage_path: "/media/sound.flac".to_string(),
         };
         Ok(vec![sound])
     }
