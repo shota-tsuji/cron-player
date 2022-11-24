@@ -1,72 +1,26 @@
-use std::{env, fmt};
-use std::fmt::Formatter;
-use std::io::BufReader;
-use chrono::Utc;
-use tokio_cron_scheduler::{Job, JobScheduler};
+use std::env;
+use tokio_cron_scheduler::JobScheduler;
 
-fn play_sound(file: &std::fs::File) -> Result<(), ProcessError>{
-    let file = file.try_clone().map_err(|_| ProcessError::FileReadError)?;
-    let decoder = rodio::Decoder::new(BufReader::new(file)).map_err(|_| ProcessError::FileReadError)?;
-    // OutputStream (_stream) is needed to play sound.
-    let (_stream, handle) = rodio::OutputStream::try_default().map_err(|_| ProcessError::OutputStreamError)?;
-    let sink = rodio::Sink::try_new(&handle).map_err(|_| ProcessError::OutputStreamError)?;
+mod domain;
 
-    sink.append(decoder);
-    sink.sleep_until_end();
-    Ok(())
-}
-
-/// Create a job to add scheduler
-///
-/// * `expression` - Text to represent the schedule.
-/// * `filename` - Sound file path. (String is used to move the ownership to closure and save file path within job to return)
-fn create_sound_job(expression: &str, file_path: String) -> Job {
-    Job::new(expression, move |_uuid, _l| {
-        println!("{:?}", Utc::now());
-        let file = std::fs::File::open(file_path.clone()).unwrap();
-        match play_sound(&file) {
-            Err(err) => println!("{}", err),
-            _ => {},
-        }
-        println!("{:?}", Utc::now());
-    }).unwrap()
-}
+use crate::domain::service::job_creation_service::JobCreateService;
+use crate::domain::service::job_execution_service::JobExecuteService;
+use crate::domain::entity::job::PlaySound;
 
 #[tokio::main]
 async fn main() {
     let expression = "0 1/1 * * * * *";
-    let mut sched = JobScheduler::new().await.unwrap();
+    let sched = JobScheduler::new().await.unwrap();
 
     let file_path = env::args().nth(1).unwrap();
-    let job = create_sound_job(expression, file_path.clone());
-    sched.add(job).await.unwrap();
+    let cmd = PlaySound::new(expression.to_string(), file_path.clone());
+    let job = JobCreateService::create_sound_job(cmd);
 
-    #[cfg(feature = "signal")]
-    sched.shutdown_on_ctrl_c();
+    let mut job_execute_service = JobExecuteService::new(sched);
+    job_execute_service.add(job).await;
+    job_execute_service.start().await;
 
-    sched.set_shutdown_handler(Box::new(|| {
-        Box::pin(async move {
-            println!("Shut down done");
-        })
-    }));
-
-    let _ = sched.start().await.unwrap();
     loop {
         tokio::time::sleep(core::time::Duration::from_millis(500)).await;
-    }
-
-}
-
-enum ProcessError {
-    FileReadError,
-    OutputStreamError,
-}
-
-impl fmt::Display for ProcessError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match *self {
-            ProcessError::FileReadError => write!(f, "file state is invalid"),
-            ProcessError::OutputStreamError => write!(f, "output stream setting is failed"),
-        }
     }
 }
