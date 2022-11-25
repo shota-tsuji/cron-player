@@ -9,13 +9,13 @@ use crate::PlaySound;
 pub struct JobCreateService {}
 
 fn play_sound(file: &std::fs::File) -> Result<(), ProcessError> {
-    let file = file.try_clone().map_err(|e| ProcessError::FileReadError(e))?;
+    let file = file.try_clone()?;
     let decoder =
-        rodio::Decoder::new(BufReader::new(file)).map_err(|e| ProcessError::DecodeError(e))?;
+        rodio::Decoder::new(BufReader::new(file))?;
     // OutputStream (_stream) is needed to play sound.
     let (_stream, handle) =
-        rodio::OutputStream::try_default().map_err(|e| ProcessError::OutputStreamError(e))?;
-    let sink = rodio::Sink::try_new(&handle).map_err(|e| ProcessError::PlayingError(e))?;
+        rodio::OutputStream::try_default()?;
+    let sink = rodio::Sink::try_new(&handle)?;
 
     sink.append(decoder);
     sink.sleep_until_end();
