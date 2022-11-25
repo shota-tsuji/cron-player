@@ -3,11 +3,11 @@ use std::{fmt, io};
 use std::fmt::Formatter;
 
 #[derive(Debug, Error)]
-pub enum ProcessError {
+pub enum DomainError {
     #[error("{0}")]
     Validation(String),
-    #[error(transparent)]
-    Resource(anyhow::Error),
-    #[error(transparent)]
-    EquipmentError(anyhow::Error),
+    #[error("{0}")]
+    Resource(String),
+    #[error("{0}")]
+    EquipmentError(String),
 }

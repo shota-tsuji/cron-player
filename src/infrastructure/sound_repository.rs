@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 use crate::domain::entity::sound::Sound;
-use crate::domain::error::ProcessError;
+use crate::domain::error::DomainError;
 use crate::domain::repository::sound_repository::SoundRepository;
 
 pub struct LocalSoundRepository {
@@ -15,7 +15,7 @@ impl LocalSoundRepository {
 }
 
 impl SoundRepository for LocalSoundRepository {
-    fn find_all(&self) -> Result<Vec<Sound>, ProcessError> {
+    fn find_all(&self) -> Result<Vec<Sound>, DomainError> {
         let sound = Sound {
             id: Uuid::new_v4(),
             title: "title0".to_string(),

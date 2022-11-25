@@ -1,14 +1,14 @@
 use chrono::Utc;
 
 //use crate::domain::error::kind::ProcessError;
-use crate::domain::error::ProcessError;
+use crate::domain::error::DomainError;
 use std::io::BufReader;
 use tokio_cron_scheduler::Job;
 use crate::PlaySound;
 
 pub struct JobCreateService {}
 
-fn play_sound(file: &std::fs::File) -> Result<(), ProcessError> {
+fn play_sound(file: &std::fs::File) -> Result<(), DomainError> {
     let file = file.try_clone()?;
     let decoder =
         rodio::Decoder::new(BufReader::new(file))?;
